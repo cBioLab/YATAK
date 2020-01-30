@@ -1,0 +1,17 @@
+.DS_Store
+
+# datas
+*.bed
+*.bedpe
+*.tsv
+*.vcf
+*.fastq
+*.fasta
+
+# text / log
+*.txt
+*.html
+*.log
+
+# binary
+bin/
