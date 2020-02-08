@@ -6,9 +6,16 @@ In the first step of YATAK, it a creates a succinct index for the assembly graph
 width=800/>
 
 # Installation requirements
+* [Succinct Data Structure Library 2.0](https://github.com/simongog/sdsl-lite)
 
 # Installation
 
+      clone git@github.com:cBioLab/YATAK.git
+      cd YATAK
+      mkdir bin
+      make
+
+* Edit "SDSLLIBS" in Makefile to set correct paths.
 # Running
 
 
