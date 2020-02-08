@@ -15,7 +15,7 @@ width=800/>
       mkdir bin
       make
 
-* Edit "SDSLLIBS" in Makefile to set correct paths.
+* You need to edit Makefile to set correct paths for "SDSLLIBS".
 # Running
 
 
