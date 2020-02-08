@@ -18,4 +18,6 @@ width=800/>
 * You need to edit Makefile to set correct paths for "SDSLLIBS".
 # Running
 
-
+      pipeline.sh
+      
+# Examples
