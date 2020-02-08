@@ -18,6 +18,7 @@ width=800/>
 * You need to edit Makefile to set correct paths for "SDSLLIBS".
 # Running
 
-      pipeline.sh
+      cd YATAK
+      ./pipeline.sh <reference-directory> <reference.fa> <dataset-directory> <normal.bam> <tumor.bam> <number of threads>
       
 # Examples
