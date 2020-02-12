@@ -194,46 +194,6 @@ bool MEMFilter(const string& query, SuffixTree& suffixtree, const string& tag) {
   return true;
 }
 
-/*bool clippingPositionFilter(const string& query, SuffixTree& suffixtree, const string& tag) {
-  const int MEMMatchLengthLimit = 30;
-  const int mappingScoreLimit = 130;
-  int querySize = query.size();
-
-  // Filter 2 : clipping position of maximum MEM extension
-  // calc MEM of maximum length
-  MatchedInfo crtInfo = MatchedInfo(false, suffixtree.cst.root(), 0, 0, deque<char>());
-  MatchedInfo maxInfo = MatchedInfo(false, suffixtree.cst.root(), 0, 0, deque<char>());
-  int matchPosition = -1;
-  for(int i = querySize - 1; i >= 0; i--) {
-    while(!suffixtree.moveLeftBoundToLeftAttempt(crtInfo, query[i], true)) {
-      suffixtree.moveRightBoundToLeft(crtInfo, false);
-    }
-    suffixtree.moveLeftBoundToLeft(crtInfo, query[i]);
-
-    if(maxInfo.len < crtInfo.len) {
-      maxInfo = crtInfo;
-      matchPosition = i;
-    }
-  }
-
-  if(maxInfo.len < MEMMatchLengthLimit) { // cannot find the seed with enough length
-    return true;
-  }
-
-  int l = matchPosition, r = matchPosition + maxInfo.len;
-
-  string debugseq;
-  MappedPathInfo pathInfoLeft = calcExtensionFromMEM(query, suffixtree, l, maxInfo, false, tag);
-  MappedPathInfo pathInfoRight = calcExtensionFromMEM(query, suffixtree, r, maxInfo, true, tag);
-  int currentScore = pathInfoLeft.score + pathInfoRight.score + baseScore * maxInfo.len;
-
-  if(currentScore >= mappingScoreLimit) { // clipping positions are too near to endpoint
-    return false;
-  }
-
-  return true;
-}
-*/
 vector<MappingInfo> calcBreakPosition(const string& query, SuffixTree& suffixtree, const string& tag, bool isRev, bool& foundWellMappedPath) {
   const pos_type MEMMatchLengthLimit = 30;
   const pos_type mappingScoreLimit = 130;
@@ -335,9 +295,6 @@ bool inputProcess(ifstream& ifs, string& tag, string& read, string& quality, mut
   return true;
 }
 
-read_num_type MEMFilteredRead = 0;
-read_num_type clipPosFilteredRead = 0;
-
 void worker_Read(ifstream& ifsTumor, SuffixTree& suffixtree, vector<pair<MappingInfo, string>>& mappingInfoAndRead, read_num_type& currentReadCount, mutex& mtx) {
 
   const pos_type clippingLengthLimit = 20;
@@ -361,7 +318,6 @@ void worker_Read(ifstream& ifsTumor, SuffixTree& suffixtree, vector<pair<Mapping
       // MEM filter
       if(!MEMFilter(read, suffixtree, tag)) {
         isSuspicious = false;
-        MEMFilteredRead++;
         break;
       }
     }
@@ -373,7 +329,6 @@ void worker_Read(ifstream& ifsTumor, SuffixTree& suffixtree, vector<pair<Mapping
         vector<MappingInfo> currentMappingInfos = calcBreakPosition(read, suffixtree, tag, (strand == 1), wellMapped);
 
         if(wellMapped) {
-          clipPosFilteredRead++;
           break;
         }
 
@@ -392,7 +347,6 @@ void worker_Read(ifstream& ifsTumor, SuffixTree& suffixtree, vector<pair<Mapping
       for(int i = 0; i < min(resultNumLimit, (int) mappingInfosOfRead.size()); i++) {
         int readLen = read.length();
         if(mappingInfosOfRead[i].clippingPosL < clippingLengthLimit && readLen - mappingInfosOfRead[i].clippingPosR < clippingLengthLimit) {
-          clipPosFilteredRead++;
           wellMapped = true;
           break;
         }
@@ -461,40 +415,6 @@ bool isValidSVContig(const string& prefix, const string& suffix) {
   return true;
 }
 
-/*int calcDistForAssembly(string a, string b, bool revFlag) {
-  if(revFlag) {
-    reverse(a.begin(), a.end()); reverse(b.begin(), b.end());
-  }
-
-  int N = a.size(), M = b.size();
-  vector<vector<int>> dpTable(N + 1, vector<int>(M + 1, N * M * gapPenalty));
-  for(int i = 0; i <= N; i++) {
-    dpTable[i][0] = i * gapPenalty;
-  }
-  for(int j = 0; j <= M; j++) {
-    dpTable[0][j] = j * gapPenalty;
-  }
-  for(int i = 1; i <= N; i++) {
-    for(int j = 1; j <= M; j++) {
-
-      int score = dpTable[i - 1][j - 1] + (a[i - 1] == b[j - 1] ? 0 : unmatchPenalty);
-      if(dpTable[i][j] > score) {
-        dpTable[i][j] = score;
-      }
-      score = dpTable[i][j - 1] + (i == N ? 0 : gapPenalty);
-      if(dpTable[i][j] > score) {
-        dpTable[i][j] = score;
-      }
-      score = dpTable[i - 1][j] + (j == M ? 0 : gapPenalty);
-      if(dpTable[i][j] > score) {
-        dpTable[i][j] = score;
-      }
-    }
-  }
-
-  return dpTable[N][M];
-}*/
-
 int main(int argc, char **argv){
 
   if(argc < 5) {
@@ -523,28 +443,6 @@ int main(int argc, char **argv){
 
   SuffixTree suffixtree(indexFilePath);
 
-  /*string q;
-  string hogehoge = "";
-  while(cin>>q) {
-    MatchedInfo crtInfo = MatchedInfo(true, suffixtree.cst.root(), 0, 0, deque<char>());
-    for(int i = 0; i < q.size(); i++) {
-      cerr << "[attempt from] " << crtInfo.v << endl;
-      while(!suffixtree.moveRightBoundToRightAttempt(crtInfo, q[i], false)) {
-        suffixtree.moveLeftBoundToRight(crtInfo, false, hogehoge);
-        cerr << "[fail, attempt from] " << crtInfo.v << endl;
-        suffixtree.showMatchInfoDetail(crtInfo);
-      }
-      suffixtree.moveRightBoundToRight(crtInfo, q[i]);
-      cerr << "[success] " << crtInfo.v << endl;
-      suffixtree.showMatchInfoDetail(crtInfo);
-    }
-    while(crtInfo.len > 30) {
-      suffixtree.moveLeftBoundToRight(crtInfo, false, hogehoge);
-      cerr << "[decreasing] " << crtInfo.v << endl;
-      suffixtree.showMatchInfoDetail(crtInfo);
-    }
-  }*/
-
   cerr << "[rf_mapping] Mapping process started." << endl;
 
   read_num_type suspiciousReadcount = 0, clusteredReadcount = 0, currentReadCount = 0;
@@ -571,7 +469,6 @@ int main(int argc, char **argv){
   memory_monitor::stop();
   cerr << "[rf_mapping] Mapping process : " << duration_cast<seconds>(stopTimer - startTimer).count() << " seconds." << endl;
   cerr << "[rf_mapping] peak usage = " << memory_monitor::peak() / (1024*1024) << " MB" << endl;
-  cerr << "[rf_mapping] MEMFilteredRead / clipPosFilteredRead / restReadNum / totalReadNum : " << MEMFilteredRead << " / " << clipPosFilteredRead << " / " << currentReadCount - MEMFilteredRead - clipPosFilteredRead << " / " << currentReadCount << endl;
   
   // Assembling process
   memory_monitor::start();
@@ -755,109 +652,10 @@ int main(int argc, char **argv){
     }
   }
 
-  /*vector<vector<pair<string, string>>> resultContigCluster;
-  const int distTheashold = 5;
-  for(pair<string, string> currentContig : obtainedContigs) {
-    bool merged = false;
-    string rcprefix = getRCRead(currentContig.first);
-    string rcsuffix = getRCRead(currentContig.second);
-    for(read_num_type clusterIndex = 0; clusterIndex < resultContigCluster.size(); clusterIndex++) {
-      bool mergingOK = true;
-      for(pair<string, string> comparingContig : resultContigCluster[clusterIndex]) {
-        if(calcDistForAssembly(currentContig.first, comparingContig.first, true) > distTheashold || calcDistForAssembly(currentContig.second, comparingContig.second, false) > distTheashold) mergingOK = false;
-      }
-      if(mergingOK) {
-        resultContigCluster[clusterIndex].push_back(currentContig);
-        merged = true;
-        break;
-      }
-      mergingOK = true;
-      for(pair<string, string> comparingContig : resultContigCluster[clusterIndex]) {
-        if(calcDistForAssembly(rcsuffix, comparingContig.first, true) > distTheashold || calcDistForAssembly(rcprefix, comparingContig.second, false) > distTheashold) mergingOK = false;
-      }
-      if(mergingOK) {
-        resultContigCluster[clusterIndex].push_back(pair<string, string>(rcsuffix, rcprefix));
-        merged = true;
-        break;
-      }
-    }
-    if(!merged) {
-      resultContigCluster.push_back(vector<pair<string, string>>{currentContig});
-    }
-  }
-
-  cerr << "[rf_mapping] Result Cluster Num : " << resultContigCluster.size() << endl;
-
-  string mafftInputFilePath = tumorFilePath + "_cluster_contigs.fasta";
-  string mafftOutputFilePath = tumorFilePath + "_mafft_proccessed.fasta";
-  string mafftLogFilePath = tumorFilePath + "_mafftlog.txt";
-  for(read_num_type clusterIndex = 0; clusterIndex < resultContigCluster.size(); clusterIndex++) {
-    read_num_type currentClusterSize = resultContigCluster[clusterIndex].size();
-
-    if(currentClusterSize == 1) {
-      string contig = resultContigCluster[clusterIndex][0].first + resultContigCluster[clusterIndex][0].second;
-      ofsExtracted << "@contig_" << to_string(clusterIndex) << '\n';
-      ofsExtracted << contig << '\n';
-      ofsExtracted << "+" << '\n';
-      ofsExtracted << string(contig.size(), 'I') << '\n';
-      continue;
-    }
-
-    read_num_type tempContigIndex = 0;
-    ofstream ofsTmp(mafftInputFilePath);
-    for(pair<string, string> contig : resultContigCluster[clusterIndex]) {
-      ofsTmp << ">contig_" << to_string(tempContigIndex++) << '\n';
-      ofsTmp << contig.first << contig.second << '\n';
-    }
-    ofsTmp.close();
-
-    string mafftCommand = "mafft " + mafftInputFilePath + " > " + mafftOutputFilePath + " 2> " + mafftLogFilePath;
-    system(mafftCommand.c_str());
-
-    ifstream ifsTmp(mafftOutputFilePath);
-    vector<string> alignments;
-    string input;
-    getline(ifsTmp, input);
-    while(1) {
-      string seq;
-      while(getline(ifsTmp, input)) {
-        if(input[0] == '>') break;
-        seq += input;
-      }
-      if(seq.size() == 0) break;
-      alignments.push_back(seq);
-    }
-
-    int constructedContigLen = alignments[0].size();
-    string constructedContig;
-    for(int i = 0; i < constructedContigLen; i++) {
-      char mostFreqChar = '-';
-      read_num_type mostFreqCharCount = 0;
-      map<char, read_num_type> charCount;
-      for(read_num_type j = 0; j < currentClusterSize; j++) {
-        if(alignments[j][i] == '-') continue;
-        charCount[alignments[j][i]]++;
-        if(charCount[alignments[j][i]] > mostFreqCharCount) {
-          mostFreqChar = alignments[j][i];
-          mostFreqCharCount = charCount[alignments[j][i]];
-        }
-      }
-      constructedContig += toupper(mostFreqChar);
-    }
-
-    ofsExtracted << "@contig_" + to_string(clusterIndex) << '\n';
-    ofsExtracted << constructedContig << '\n';
-    ofsExtracted << "+" << '\n';
-    ofsExtracted << string(constructedContig.size(), 'I') << '\n';
-  }*/
-
   ofsExtracted.close();
   ofsInvalid.close();
 
   cerr << "[rf_mapping] Assembling process completed. " << endl;
-  cerr << "[rf_mapping] Output contig number : " << clusterIndex << endl;
-  cerr << "[rf_mapping] Discared by less diversity contig number : " << invalidContigNum << endl;
-  cerr << "[rf_mapping] Total clusters number : " << clusterIndex + invalidContigNum << endl;
   stopTimer = timer::now();
   memory_monitor::stop();
   cerr << "[rf_mapping] Assembling process : " << duration_cast<seconds>(stopTimer - startTimer).count() << " seconds." << endl;
