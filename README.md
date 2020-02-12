@@ -13,7 +13,7 @@ width=800/>
 
 # Installation
 
-      clone git@github.com:cBioLab/YATAK.git
+      git clone git@github.com:cBioLab/YATAK.git
       cd YATAK
       mkdir bin
       make
