@@ -6,6 +6,9 @@ In the first step of YATAK, it a creates a succinct index for the assembly graph
 width=800/>
 
 # Installation requirements
+* bwa
+* samtools
+* [mafft](https://mafft.cbrc.jp/alignment/software)
 * [Succinct Data Structure Library 2.0](https://github.com/simongog/sdsl-lite)
 
 # Installation
@@ -16,9 +19,10 @@ width=800/>
       make
 
 * You need to edit Makefile to set correct paths for "SDSLLIBS".
+
 # Running
 
       cd YATAK
-      ./pipeline.sh <reference-directory> <reference.fa> <dataset-directory> <normal.bam> <tumor.bam> <number of threads>
+      ./pipeline.sh <reference.fa> <dataset-directory> <normal.bam> <tumor.bam> <number of threads>
       
 # Examples
