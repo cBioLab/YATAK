@@ -7,14 +7,12 @@ fi
 
 REFERENCE_FASTA=$1
 REFERENCE_BASE=$(basename $1)
-echo $REFERENCE_BASE
 DATASET_DIR=$2
 NORMAL_BAM=$3
 TUMOR_BAM=$4
 NUM_THREADS=$5
 
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
-echo $SCRIPT_DIR
 
 echo "!! Note that samtools/bwa/mafft needs to be installed !!"
 echo "This program creates intermediate files in the $DATASET_DIR during the pipeline."
