@@ -78,7 +78,7 @@ if [ ! -e "$DATASET_DIR/$REFERENCE_BASE.$NORMAL_BAM.index.cst" ] || [ ! -e "$DAT
 fi
 
 ### alignment on graph
-if [ ! -e "$3/$5.extracted.fastq" ]; then
+if [ ! -e "$DATASET_DIR/$TUMOR_BAM.extracted.fastq" ]; then
   echo "[pipeline] Main filtering process started ... "
   $SCRIPT_DIR/bin/rf_mapping $DATASET_DIR/$TUMOR_BAM.filtered.fastq $DATASET_DIR/$REFERENCE_BASE.$NORMAL_BAM.index $DATASET_DIR/$TUMOR_BAM.extracted.fastq $NUM_THREADS
   echo "[pipeline] pruning_read Done."
@@ -86,14 +86,14 @@ if [ ! -e "$3/$5.extracted.fastq" ]; then
 fi
 
 ### report on reference
-if [ ! -e "$3/$5.result.bedpe" ]; then
+if [ ! -e "$DATASET_DIR/$TUMOR_BAM.result.bedpe" ]; then
   echo "[pipeline] Creating report ... "
   bwa mem $REFERENCE_FASTA.index $DATASET_DIR/$TUMOR_BAM.extracted.fastq > $DATASET_DIR/$TUMOR_BAM.extracted.sam
   $SCRIPT_DIR/bin/contig_assembly $DATASET_DIR/$TUMOR_BAM.extracted.fastq $DATASET_DIR/$TUMOR_BAM.extracted.sam $DATASET_DIR/$TUMOR_BAM.extracted.contig.fastq
   bwa mem $REFERENCE_FASTA.index $DATASET_DIR/$TUMOR_BAM.extracted.contig.fastq > $DATASET_DIR/$TUMOR_BAM.extracted.contig.sam
   $SCRIPT_DIR/bin/summary_info $DATASET_DIR/$TUMOR_BAM.extracted.contig.fastq $DATASET_DIR/$TUMOR_BAM.extracted.contig.sam $DATASET_DIR/$TUMOR_BAM.result.bedpe
   echo "[pipeline] contig_assembly and summary_info Done."
-  echo "[pipeline] The result is in $DATASET_DIR/$TUMOR_BAM.result.bedpe"
+  echo "[pipeline] The result is in $DATASET_DIR/$TUMOR_BAM.result.bedpe "
   date
 fi
 
