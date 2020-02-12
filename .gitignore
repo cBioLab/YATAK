@@ -1,7 +1,6 @@
 .DS_Store
 
-# datas
-*.bed
+# data
 *.bedpe
 *.tsv
 *.vcf
