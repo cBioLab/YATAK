@@ -21,8 +21,14 @@ width=800/>
 * You need to edit Makefile to set correct paths for "SDSLLIBS".
 
 # Running
-
       cd YATAK
       ./pipeline.sh <reference.fa> <dataset-directory> <normal.bam> <tumor.bam> <number of threads>
       
 # Examples
+
+You can try a tiny example by the commands:
+
+      ./pipeline.sh examples/reference/tiny-ref.fa examples/reads tiny-normal-reads.bam tiny-tumor-reads.bam 1
+      
+
+Then you can get the result `examples/reads/tiny-tumor-reads.bam.result.bedpe`.
