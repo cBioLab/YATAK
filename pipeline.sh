@@ -1,78 +1,78 @@
 #!/bin/sh
 
-if [ "$#" != "6" ] && [ "$#" != "7" ]; then
-  echo "[!] Usage : ./pipeline.sh <reference-directory> <reference.fa> <dataset-directory> <normal.bam> <tumor.bam> <number of threads> (<clear-map/clear-index>)"
+if [ "$#" != "5" ]; then
+  echo "[!] Usage : ./pipeline.sh <reference.fa> <dataset-directory> <normal.bam> <tumor.bam> <number of threads>"
   exit
 fi
 
-if [ "$#" = "7" ]; then
-  if [ "$7" = "clear-map" ]; then
-    rm $3/$5.extracted.fastq
-    rm $3/$5.summary.txt
-  elif [ "$7" = "clear-index" ]; then
-    rm $3/$2.$4.index.cst
-    rm $3/$2.$4.index.refbv
-    rm $3/$5.extracted.fastq
-    rm $3/$5.summary.txt
-  fi
-fi
+REFERENCE_FASTA=$1
+REFERENCE_BASE=$(basename $1)
+echo $REFERENCE_BASE
+DATASET_DIR=$2
+NORMAL_BAM=$3
+TUMOR_BAM=$4
+NUM_THREADS=$5
 
-echo "!! Note that samtools/bwa/mafft needs to be installed. !!"
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+echo $SCRIPT_DIR
+
+echo "!! Note that samtools/bwa/mafft needs to be installed !!"
+echo "This program creates intermediate files in the $DATASET_DIR during the pipeline."
 date
 
 ### indexing for bwa
-if [ ! -e "$1/$2.index.amb" ] || [ ! -e "$1/$2.index.ann" ] || [ ! -e "$1/$2.index.bwt" ] || [ ! -e "$1/$2.index.pac" ] || [ ! -e "$1/$2.index.sa" ]; then
-  if [ ! -e "$1/$2" ]; then
-    echo "[!] $1/$2 not found. "
+if [ ! -e "$REFERENCE_FASTA.index.amb" ] || [ ! -e "$REFERENCE_FASTA.index.ann" ] || [ ! -e "$REFERENCE_FASTA.index.bwt" ] || [ ! -e "$REFERENCE_FASTA.index.pac" ] || [ ! -e "$REFERENCE_FASTA.index.sa" ]; then
+  if [ ! -e "$REFERENCE_FASTA" ]; then
+    echo "[!] $REFERENCE_FASTA not found. "
     exit
   fi
-  echo "[pipeline] $1/$2.index is not found. Indexing process started ... "
-  bwa index -p $1/$2.index $1/$2
+  echo "[pipeline] $REFERENCE_FASTA.index is not found. Indexing process started ... "
+  bwa index -p $REFERENCE_FASTA.index $REFERENCE_FASTA
   echo "[pipeline] bwa index Done."
   date
 fi
 
-if [ ! -e "$1/$2.fixed.fa" ]; then
-  if [ ! -e "$1/$2" ]; then
-    echo "[!] $1/$2 not found. "
+if [ ! -e "$REFERENCE_FASTA.fixed.fa" ]; then
+  if [ ! -e "$REFERENCE_FASTA" ]; then
+    echo "[!] $REFERENCE_FASTA not found. "
     exit
   fi
-  echo "[pipeline] $1/$2.fixed.fa is not found. Fixing process started ... "
-  ./bin/fix_reference_for_indexing $1/$2 $1/$2.fixed.fa
+  echo "[pipeline] $REFERENCE_FASTA.fixed.fa is not found. Fixing process started ... "
+  $SCRIPT_DIR/bin/fix_reference_for_indexing $REFERENCE_FASTA $REFERENCE_FASTA.fixed.fa
   echo "[pipeline] fix_reference_for_indexing Done."
   date
 fi
 
-### filter read from SAM
-if [ ! -e "$3/$4.filtered.fastq" ]; then
-  if [ ! -e "$3/$4" ]; then
-    echo "[!] $3/$4 not found. "
+### filter read from BAM
+if [ ! -e "$DATASET_DIR/$NORMAL_BAM.filtered.fastq" ]; then
+  if [ ! -e "$DATASET_DIR/$NORMAL_BAM" ]; then
+    echo "[!] $DATASET_DIR/$NORMAL_BAM not found. "
     exit
   fi
-  echo "[pipeline] $3/$4.filtered.fastq is not found. Filtering process started ... "
-  ./scripts/filter_read_from_sam.py $3/$4 $3/$4.filtered.bam
-  samtools fastq $3/$4.filtered.bam > $3/$4.filtered.fastq
+  echo "[pipeline] $DATASET_DIR/$NORMAL_BAM.filtered.fastq is not found. Filtering process started ... "
+  $SCRIPT_DIR/scripts/filter_read_from_sam.py $DATASET_DIR/$NORMAL_BAM $DATASET_DIR/$NORMAL_BAM.filtered.bam
+  samtools fastq $DATASET_DIR/$NORMAL_BAM.filtered.bam > $DATASET_DIR/$NORMAL_BAM.filtered.fastq
   echo "[pipeline] filter_read_from_sam (normal) Done."
   date
 fi
 
-if [ ! -e "$3/$5.filtered.fastq" ]; then
-  if [ ! -e "$3/$5" ]; then
-    echo "[!] $3/$5 not found. "
+if [ ! -e "$DATASET_DIR/$TUMOR_BAM.filtered.fastq" ]; then
+  if [ ! -e "$DATASET_DIR/$TUMOR_BAM" ]; then
+    echo "[!] $DATASET_DIR/$TUMOR_BAM not found. "
     exit
   fi
-  echo "[pipeline] $3/$5.filtered.fastq is not found. Filtering process started ... "
-  ./scripts/filter_read_from_sam.py $3/$5 $3/$5.filtered.bam
-  samtools fastq $3/$5.filtered.bam > $3/$5.filtered.fastq
+  echo "[pipeline] $DATASET_DIR/$TUMOR_BAM.filtered.fastq is not found. Filtering process started ... "
+  $SCRIPT_DIR/scripts/filter_read_from_sam.py $DATASET_DIR/$TUMOR_BAM $DATASET_DIR/$TUMOR_BAM.filtered.bam
+  samtools fastq $DATASET_DIR/$TUMOR_BAM.filtered.bam > $DATASET_DIR/$TUMOR_BAM.filtered.fastq
   echo "[pipeline] filter_read_from_sam (tumor) Done."
   date
 fi
 
 ### indexing
-if [ ! -e "$3/$2.$4.index.cst" ] || [ ! -e "$3/$2.$4.index.refbv" ]; then
-  echo "[pipeline] $3/$2.$4.index is not found. Indexing process started ... "
-  ./bin/construct_index $1/$2.fixed.fa $3/$4.filtered.fastq $3/$2.$4.index $6
-  rm $3/$4.filtered.fastq_reference_read_text.tmp
+if [ ! -e "$DATASET_DIR/$REFERENCE_BASE.$NORMAL_BAM.index.cst" ] || [ ! -e "$DATASET_DIR/$REFERENCE_BASE.$NORMAL_BAM.index.refbv" ]; then
+  echo "[pipeline] $DATASET_DIR/$REFERENCE_BASE.$NORMAL_BAM.index is not found. Indexing process started ... "
+  $SCRIPT_DIR/bin/construct_index $REFERENCE_FASTA.fixed.fa $DATASET_DIR/$NORMAL_BAM.filtered.fastq $DATASET_DIR/$REFERENCE_BASE.$NORMAL_BAM.index $NUM_THREADS
+  rm $DATASET_DIR/$NORMAL_BAM.filtered.fastq_reference_read_text.tmp
   echo "[pipeline] construct_index Done."
   date
 fi
@@ -80,7 +80,7 @@ fi
 ### alignment on graph
 if [ ! -e "$3/$5.extracted.fastq" ]; then
   echo "[pipeline] Main filtering process started ... "
-  ./bin/rf_mapping $3/$5.filtered.fastq $3/$2.$4.index $3/$5.extracted.fastq $6
+  $SCRIPT_DIR/bin/rf_mapping $DATASET_DIR/$TUMOR_BAM.filtered.fastq $DATASET_DIR/$REFERENCE_BASE.$NORMAL_BAM.index $DATASET_DIR/$TUMOR_BAM.extracted.fastq $NUM_THREADS
   echo "[pipeline] pruning_read Done."
   date
 fi
@@ -88,11 +88,12 @@ fi
 ### report on reference
 if [ ! -e "$3/$5.result.bedpe" ]; then
   echo "[pipeline] Creating report ... "
-  bwa mem $1/$2.index $3/$5.extracted.fastq > $3/$5.extracted.sam
-  ./bin/contig_assembly $3/$5.extracted.fastq $3/$5.extracted.sam $3/$5.extracted.contig.fastq
-  bwa mem $1/$2.index $3/$5.extracted.contig.fastq > $3/$5.extracted.contig.sam
-  ./bin/summary_info $3/$5.extracted.contig.fastq $3/$5.extracted.contig.sam $3/$5.result.bedpe
+  bwa mem $REFERENCE_FASTA.index $DATASET_DIR/$TUMOR_BAM.extracted.fastq > $DATASET_DIR/$TUMOR_BAM.extracted.sam
+  $SCRIPT_DIR/bin/contig_assembly $DATASET_DIR/$TUMOR_BAM.extracted.fastq $DATASET_DIR/$TUMOR_BAM.extracted.sam $DATASET_DIR/$TUMOR_BAM.extracted.contig.fastq
+  bwa mem $REFERENCE_FASTA.index $DATASET_DIR/$TUMOR_BAM.extracted.contig.fastq > $DATASET_DIR/$TUMOR_BAM.extracted.contig.sam
+  $SCRIPT_DIR/bin/summary_info $DATASET_DIR/$TUMOR_BAM.extracted.contig.fastq $DATASET_DIR/$TUMOR_BAM.extracted.contig.sam $DATASET_DIR/$TUMOR_BAM.result.bedpe
   echo "[pipeline] contig_assembly and summary_info Done."
+  echo "[pipeline] The result is in $DATASET_DIR/$TUMOR_BAM.result.bedpe"
   date
 fi
 

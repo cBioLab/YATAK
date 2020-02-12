@@ -1,6 +1,6 @@
 
 COMPILER = g++
-CXXFLAGS = -std=c++17 -O3 -W -Wshadow
+CXXFLAGS = -std=c++17 -O3 -DNDEBUG
 MYLIBS = -I ./include
 SDSLLIBS = -I ~/include -L ~/lib
 SDSLFLAGS = -lsdsl -ldivsufsort -ldivsufsort64
@@ -11,7 +11,7 @@ INCLUDEDIR = include
 BINDIR = bin
 
 EXECS = $(BINDIR)/fix_reference_for_indexing $(BINDIR)/construct_index $(BINDIR)/rf_mapping $(BINDIR)/contig_assembly $(BINDIR)/summary_info
-all: $(EXECS) $(TOOLS)
+all: $(EXECS)
 
 ####
 $(BINDIR)/fix_reference_for_indexing:  $(SRCDIR)/fix_reference_for_indexing.cpp
@@ -29,6 +29,5 @@ $(BINDIR)/contig_assembly:  $(SRCDIR)/contig_assembly.cpp
 $(BINDIR)/summary_info:  $(INCLUDEDIR)/genomeutil.hpp $(INCLUDEDIR)/bedpe_manager.hpp $(SRCDIR)/summary_info.cpp
 	$(COMPILER) $(CXXFLAGS) $(MYLIBS) $(SRCDIR)/summary_info.cpp -o $(BINDIR)/summary_info
 
-
 clean:
-	rm -f $(EXECS) $(TOOLS)
+	rm -f $(EXECS)
